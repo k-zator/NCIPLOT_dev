@@ -136,6 +136,7 @@ program nciplot
       endif
    endif
 
+   !open(unit=99, file='debug.log', status='unknown')
    !===============================================================================!
    ! Internal clock starts! Header drops.
    !===============================================================================!
@@ -193,7 +194,6 @@ program nciplot
    ispromol = .not. (all(m(:)%ifile == ifile_wfn) .or. (all(m(:)%ifile == ifile_wfx)) .or. (all(m(:)%ifile == ifile_cube)))
 
    ! read density grids (props.f90)
-
    ! by default, use density grids for heavier or charged atoms if promolecularity is on
    if (ispromol) then
    call init_rhogrid(m, nfiles)
@@ -209,7 +209,6 @@ program nciplot
          end if
       end do
    end if
-
     isnotcube = .not. (all(m(:)%ifile == ifile_cube))
    ! This checks whether the calculation uses cube files
    !===============================================================================!
@@ -296,10 +295,53 @@ end if !isnotcube
    ! - FINE
    ! - ULTRAFINE
    ! - COARSE
+   ! - CLUSTERING
    !===============================================================================!
 
-   do while (isnotcube)
+do while (.true.) 
       read (uin, '(a)', end=11) line
+      line = trim(adjustl(line))
+      oline = line
+      call upper(line)
+      if (line(1:1) == "#") cycle ! skip comments
+      if (len(trim(line)) < 1) cycle ! skip blank lines
+      idx = index(line, ' ')
+      word = line(1:idx - 1)
+      line = line(idx:)
+      oline = oline(idx:)
+      select case (trim(word))
+      case ("ONAME")         ! output name
+         read (oline, '(a)') oname
+         oname = trim(adjustl(oname))
+         oname = oname(1:index(oname, ' '))
+
+      case ("OUTPUT")
+         read (line, *) noutput          ! number of output files
+
+      case ("CUTOFFS")          ! density and RDG cutoffs
+         read (line, *) rhocut, dimcut
+
+      case ("CUTPLOT")          ! density cutoff used in the VMD script
+         read (line, *) rhoplot, isordg
+
+      case ("ISORDG")           !RDG isosurface used in the RDG script
+         read (line, *) isordg
+
+      case ("CLUSTERING")  ! integration
+         doclustering = .true.              ! python script cluster
+         write (uout, 138) 
+      !case default ! something else is read
+      !   call error('nciplot', 'Don''t know what to do with '//trim(word)//' keyword', faterr)
+      end select
+
+   enddo
+
+   
+11   continue 
+   rewind(uin)
+   
+   do while (isnotcube)
+      read (uin, '(a)', end=13) line
       line = trim(adjustl(line))
       oline = line
       call upper(line)
@@ -497,44 +539,9 @@ end if !isnotcube
 end do
     ! all the previous options are not compatible with cube file inputs
     ! following are
-do while (.true.) 
-      read (uin, '(a)', end=11) line
-      line = trim(adjustl(line))
-      oline = line
-      call upper(line)
-      if (line(1:1) == "#") cycle ! skip comments
-      if (len(trim(line)) < 1) cycle ! skip blank lines
-      idx = index(line, ' ')
-      word = line(1:idx - 1)
-      line = line(idx:)
-      oline = oline(idx:)
-      select case (trim(word))
-      case ("ONAME")         ! output name
-         read (oline, '(a)') oname
-         oname = trim(adjustl(oname))
-         oname = oname(1:index(oname, ' '))
 
-      case ("OUTPUT")
-         read (line, *) noutput          ! number of output files
+13 continue
 
-      case ("CUTOFFS")          ! density and RDG cutoffs
-         read (line, *) rhocut, dimcut
-
-      case ("CUTPLOT")          ! density cutoff used in the VMD script
-         read (line, *) rhoplot, isordg
-
-      case ("ISORDG")           !RDG isosurface used in the RDG script
-         read (line, *) isordg
-
-      case ("CLUSTERING")  ! integration
-         doclustering = .true.              ! python script cluster
-      
-      case default ! something else is read
-         call error('nciplot', 'Don''t know what to do with '//trim(word)//' keyword', faterr)
-      end select
-
-   enddo
-11 continue
 
    !===============================================================================!
    ! Defining box in detail now.
@@ -727,9 +734,15 @@ do while (.true.)
                                     (sum(rhom(1:nfrag)) < rhoparam2*rho))
                if (intra) dimgrad = -dimgrad !checks for interatomic, intra is true iff inter and condition hold
                !$omp critical (cubewrite)
-               crho(i, j, k) = sign(rho, heigs(2))*100.D0
-               cgrad(i, j, k) = dimgrad
-               !crho_n variable
+               ! write to cube file, dont take into account rho values to low
+               if (rho /= 1d-30) then
+                  crho(i, j, k) = sign(rho, heigs(2))*100.D0
+                  cgrad(i, j, k) = dimgrad
+               else
+                  crho(i, j, k) = 100d0
+                  cgrad(i, j, k) = 100d0
+               end if
+
                do molid = 1, nfiles
                   crho_n(i, j, k, molid) = rhom(molid)
                enddo
@@ -904,7 +917,7 @@ else ! is a cube file
     DO it1=3,nstep(1)-3 ! since numerical differentiation reaches point +/- 2
       DO it2=3,nstep(2)-3 ! in the following we use the numerical differentiation to compute Hessian on a grid
 			DO it3=3,nstep(3)-3
-			if ((m(1)%cubedens(it1,it2,it3) .LE. rhocut) .and. (m(1)%cubedens(it1,it2,it3)  .GT. 0.)) THEN ! we restrict computation of gradient & hessian to low density regions
+			if ((m(1)%cubedens(it1,it2,it3) .LE. rhocut) .and. (m(1)%cubedens(it1,it2,it3)  .GT. 1d-6)) THEN ! we restrict computation of gradient & hessian to low density regions
 			   
             cgrad(it1,it2,it3) = (SQRT(                                                               &   ! ||grad_p(r)||
             ((m(1)%cubedens(it1+1,it2,it3) - m(1)%cubedens(it1-1,it2,it3)) / (2.*m(1)%xinc0(1)))**2.d0 + &   ! grad_x
@@ -1460,7 +1473,14 @@ end if ! isnotcube
 137 format('WARNING  -   Negative Density Values Found on Cube File               ', / &
            '             0.0 Values will be assigned                              ',/)
 
-  
+
+138 format('                                                     ', / &
+          '-------------------------------------------------------------------', /, &
+          ' CLUSTERING option specified                     ', /, &
+          ' NciCluster will be used if all libraries are installed               ', /, &
+          ' !!! Remember to set NCIPLOT_HOME variable                     ', /, &
+          '-------------------------------------------------------------------', /, &
+          '                         ',/) 
 contains
 
    !===============================================================================!
