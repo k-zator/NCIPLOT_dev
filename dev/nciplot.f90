@@ -917,8 +917,12 @@ else ! is a cube file
     DO it1=3,nstep(1)-3 ! since numerical differentiation reaches point +/- 2
       DO it2=3,nstep(2)-3 ! in the following we use the numerical differentiation to compute Hessian on a grid
 			DO it3=3,nstep(3)-3
-			if ((m(1)%cubedens(it1,it2,it3) .LE. rhocut) .and. (m(1)%cubedens(it1,it2,it3)  .GT. 1d-6)) THEN ! we restrict computation of gradient & hessian to low density regions
-			   
+         if (m(1)%cubedens(it1,it2,it3) .LT. 0.0) then ! Density is negative, a messagge appear and values are 0.0
+            flag_dens_neg = .TRUE.
+            m(1)%cubedens(it1,it2,it3)=abs(m(1)%cubedens(it1,it2,it3))
+         end if
+
+			if ((m(1)%cubedens(it1,it2,it3) .LE. rhocut)) THEN!.and. (m(1)%cubedens(it1,it2,it3)  .GT. 1d-6)) THEN ! we restrict computation of gradient & hessian to low density regions
             cgrad(it1,it2,it3) = (SQRT(                                                               &   ! ||grad_p(r)||
             ((m(1)%cubedens(it1+1,it2,it3) - m(1)%cubedens(it1-1,it2,it3)) / (2.*m(1)%xinc0(1)))**2.d0 + &   ! grad_x
    			((m(1)%cubedens(it1,it2+1,it3) - m(1)%cubedens(it1,it2-1,it3)) / (2.*m(1)%xinc0(2)))**2.d0 + &   ! grad_y
@@ -944,12 +948,8 @@ else ! is a cube file
    			call RS(3,3,hess,heigs,0,hvecs,wk1,wk2,istat) ! matrix diagonalisation defined in props
    			crho(it1,it2,it3) = sign(real(m(1)%cubedens(it1,it2,it3)),real(heigs(2)))*100.d0
         else
-            if (m(1)%cubedens(it1,it2,it3) .LT. 0.0) then ! Density is negative, a messagge appear and values are 0.0
-               flag_dens_neg = .TRUE.
-               cgrad(it1,it2,it3) = 0d0
-            else                                          ! Should be 0.0
-               cgrad(it1,it2,it3) = 100d0
-            endif
+                                                   ! Should be 0.0
+            cgrad(it1,it2,it3) = 100d0
             crho(it1,it2,it3) = 0d0
 			END IF
 			END DO
@@ -1471,7 +1471,7 @@ end if ! isnotcube
           '                         ',/) 
 
 137 format('WARNING  -   Negative Density Values Found on Cube File               ', / &
-           '             0.0 Values will be assigned                              ',/)
+           '             Absolute Values will be assigned                              ',/)
 
 
 138 format('                                                     ', / &
