@@ -4,7 +4,7 @@ NCIPLOT is a program for revealing non covalent interactions based on the reduce
 For more information and updates, visit our webpage:
   http://www.lct.jussieu.fr/pagesperso/contrera/index-nci.html
   
-Developer of the 4.0 version: Roberto A. Boto
+Developer of the 4.3 version: Katarzyna J. Zator
 
 * Overview
 
@@ -86,7 +86,10 @@ As a brief outline, the accepted keywords in this version are:
    ! - FINE
    ! - ULTRAFINE
    ! - COARSE
+   ! - CLUSTERING
    !===============================================================================!
+
+The CLUSTERING option is the new development and is the subject of this dev branch.
 
 Have fun!
 
