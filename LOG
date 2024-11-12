@@ -21,3 +21,10 @@ FINE sets increments to 0.05 and CG2FG 4 12 8 4 1.
 ULTRAFINE sets increments to 0.025 and CG2FG 4 24 16 8 1. 
 INCREMENTS are input in angstroms as well.
 It is now possible to read more than one wavefunction file, albeit not recommended.
+
+Version 4.2
+07/10/2023
+****
+Addition of the CLUSTERING code as python and its intergration into the fortran code.
+(which, however, maintains a set of default params and does not match the fortran-specified ones and requires a fix)
+Production of individual cube/grad/ for vmd visualisation and 2D plt plots of the divided surfaces.
