@@ -318,7 +318,7 @@ def writedat(filename, cl, X_iso, labels, verbose=True):
         print("done")
 
     
-def writevmd(filename, labels, isovalue, verbose=True):
+def writevmd(filename, labels, isovalue, verbose=True, c3=False):
     """ Write vmd script file for each cluster.
     
     Parameters
@@ -348,11 +348,6 @@ def writevmd(filename, labels, isovalue, verbose=True):
         f.write("# \n")
         f.write("# representation of the atoms \n")
         f.write("mol delrep 0 top \n")
-        # f.write("mol representation Lines 1.00000 \n")
-        # f.write("mol color Name \n")
-        # f.write("mol selection {all} \n")
-        # f.write("mol material Opaque \n")
-        # f.write("mol addrep top \n")
         f.write("mol representation CPK 1.000000 0.300000 118.000000 131.000000 \n")
         f.write("mol color Name \n")
         f.write("mol selection {all} \n")
@@ -360,7 +355,9 @@ def writevmd(filename, labels, isovalue, verbose=True):
         f.write("mol addrep top \n")
 
 
-    for cl in set(labels):
+    for i_label, cl in enumerate(set(labels)):
+        if i_label > 32:
+            i_label = i_label - 32
         with open(filename + "_divided.vmd", "a") as f:
             f.write("# load new molecule \n")
             f.write(
@@ -380,7 +377,10 @@ def writevmd(filename, labels, isovalue, verbose=True):
             f.write("# \n")
             f.write("# add representation of the surface \n")
             f.write("mol representation Isosurface {:.5f} 1 0 0 1 1 \n".format(isovalue))
-            f.write("mol color Volume 0 \n")
+            if c3 == True:
+                f.write("mol color ColorID {} \n".format(i_label))
+            else:
+                f.write("mol color Volume 0 \n")
             f.write("mol selection {all} \n")
             f.write("mol material Opaque \n")
             f.write("mol addrep top \n")

@@ -1187,7 +1187,6 @@ end if ! isnotcube
    ! Deallocate grids.
    !===============================================================================!
    if (allocated(tmp_rmbox)) deallocate (tmp_rmbox)
-   if (allocated(srhorange)) deallocate (srhorange)
    if (allocated(rmbox_coarse)) deallocate (rmbox_coarse) 
    if (allocated(tmp_rmbox_range)) deallocate (tmp_rmbox_range)
    if (allocated(tmp_rmbox_range_tmp)) deallocate (tmp_rmbox_range_tmp)
@@ -1235,9 +1234,15 @@ end if ! isnotcube
        ! Close the file
        close(iounit_p1)
 
-      write(command_ncicluster, '(A,A,A)') trim(adjustl(nciplot_home)), "/scripts/ncicluster.py", & 
-         " tmp_ncicluster_file"
-      
+      write(command_ncicluster, '(A,A,A,A,F5.2,A,F5.3,A,F5.3)') trim(adjustl(nciplot_home)), "/dev/scripts/ncicluster.py", & 
+         " tmp_ncicluster_file", & 
+         " --doint True --method kmeans -n 2 --isovalue ", & 
+         dimcut, &
+         " --outer ", & 
+         srhorange(3, 2), &          
+         " --inner ", & 
+         srhorange(3, 1)    
+
       py_status = system(trim(adjustl(command_ncicluster)))
       ! Check the return py_status
       select case (py_status)
@@ -1263,6 +1268,7 @@ end if ! isnotcube
    if (allocated(xinitat)) deallocate (xinitat)
    if (allocated(nstepat)) deallocate (nstepat)
    if (allocated(m)) deallocate (m)
+   if (allocated(srhorange)) deallocate (srhorange)
    if (allocated(tmp_crho)) deallocate (tmp_crho)
    if (allocated(tmp_crho_n)) deallocate (tmp_crho_n)
    if (allocated(tmp_cheigs)) deallocate (tmp_cheigs)

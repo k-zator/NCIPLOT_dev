@@ -9,20 +9,21 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from spatial.utils import *
 from spatial.divide import *
+from spatial.constants import *
 
-def discrete_cmap(N, base_cmap=None):
+
+def discrete_cmap(N, base_cmap=None, c3=None):
     """Create an N-bin discrete colormap from the specified input map"""
 
-    # Note that if base_cmap is a string or None, you can simply do
-    #    return plt.cm.get_cmap(base_cmap, N)
-    # The following works for string, None, or a colormap instance:
-
     base = plt.cm.get_cmap(base_cmap)
-    color_list = base(np.linspace(0, 1, N))
+    if c3==True:
+        color_list =COLORID[:N]
+    else:
+        color_list = base(np.linspace(0, 1, N))
     cmap_name = base.name + str(N)
     return base.from_list(cmap_name, color_list, N)
 
-def plot_2d(X_iso, labels, filename, X=None, verbose=True):
+def plot_2d(X_iso, labels, filename, X=None, verbose=True, c3=False):
     """ Plot s vs rho with different colors for data corresponding to each nci region.
     
     Parameters
@@ -40,7 +41,7 @@ def plot_2d(X_iso, labels, filename, X=None, verbose=True):
     fig_2d = plt.figure()
     #colormap = plt.cm.get_cmap("Accent")
     N = len(np.unique(labels))
-    colormap = discrete_cmap(N, base_cmap='rainbow')
+    colormap = discrete_cmap(N, base_cmap='rainbow', c3=c3)
     scatter = plt.scatter(0.01 * X_iso[:, 3], X_iso[:, 4], cmap=colormap, c=labels, s=8)
     cb = plt.colorbar(scatter, spacing='proportional',ticks=np.arange(N))
     cb.set_label('Cluster')
@@ -69,7 +70,7 @@ def plot_2d(X_iso, labels, filename, X=None, verbose=True):
         cb.set_label('Cluster')
         plt.clim(-0.5, N - 0.5)
         cb.ax.set_yticklabels(np.arange(0,N,1))
-        plt.xlim(-0.07, 0.07)
+        plt.xlim(-0.2, 0.2)
         plt.ylim(0.0, 1.0)
         plt.xlabel(r"${\rm sign}(\lambda_2) \rho$")
         plt.ylabel("s")
@@ -97,16 +98,11 @@ def plot_3d(X_iso, labels, filename, verbose=True):
     ax = fig.add_subplot(1, 1, 1, projection="3d")
     N = len(np.unique(labels))
     colormap = discrete_cmap(N, base_cmap='rainbow')
-    #print(colormap(0))
-    #print(colormap(0.5))
-    #print(colormap(1.0))
-    #print([[l, colormap(float(l)/len(set(labels)))] for l in set(labels)])
     scat = ax.scatter(X_iso[:, 0], X_iso[:, 1], X_iso[:, 2], cmap=colormap, c=labels, s=8)
 
     ax2 = fig.add_subplot(1, 17, 17)
     cm = ax2.pcolormesh(np.arange(N).reshape((N,1)), cmap=colormap)
     cb = fig.colorbar(cm, cax=ax2, ticks=np.arange(N))
-    #plt.clim(-0.5, N - 0.5)
     cb.ax.set_yticklabels(np.arange(0,N,1))
     plt.figtext(0.95, 0.5, "Cluster", ha="left", va="center", rotation="vertical")
     plt.savefig(filename + "-3d.png")

@@ -54,7 +54,7 @@ for filename in files:
     if len(np.unique(labels)) == 1:
         raise ValueError("Only one cluster has been found, you might want to manually set the number of clusters.")
     
-    plot_2d(X_iso, labels, filename, X=X, verbose=opt_dict["verbose"])
+    plot_2d(X_iso, labels, filename, X=X, verbose=opt_dict["verbose"], c3=opt_dict["c3"])
     plot_3d(X_iso, labels, filename, verbose=opt_dict["verbose"])
     plot_heatmap_distances(X_iso, labels, filename, verbose=opt_dict["verbose"])
     for cl in set(labels):
@@ -62,15 +62,15 @@ for filename in files:
         writedat(filename, cl, X_iso, labels, verbose=opt_dict["verbose"])
         if opt_dict["doint"]:
             print("  Integral of density in cluster {} : {:.8f}".format(cl, integrate_density_cl_cube(cl, X_iso, opt_dict["isovalue"], labels, incr)))
-    writevmd(filename, labels, opt_dict["isovalue"], verbose=opt_dict["verbose"])
+    writevmd(filename, labels, opt_dict["isovalue"], verbose=opt_dict["verbose"], c3=opt_dict["c3"])
     print("\n")
     
     if opt_dict["doint"]:
-        int_neg, int_tiny, int_pos = integrate_ranges(X_iso, incr)
+        int_neg, int_tiny, int_pos = integrate_ranges(X_iso, incr, opt_dict["outer"], opt_dict["inner"])
         print("  Integral of density in ranges :")
-        print("  -0.07 to -0.01 : {:.8f}".format(int_neg))
-        print("  -0.01 to  0.01 : {:.8f}".format(int_tiny))
-        print("   0.01 to  0.07 : {:.8f}".format(int_pos))
+        print("  -{} to {} : {:.8f}".format(opt_dict["outer"], opt_dict["inner"], int_neg))
+        print("  -{} to  {} : {:.8f}".format(opt_dict["inner"], opt_dict["inner"], int_tiny))
+        print("   {} to  {} : {:.8f}".format(opt_dict["inner"], opt_dict["outer"], int_pos))
 
 print(" # -----------------------------------------------------")
 print(" End -- {} \n".format(time.ctime()))

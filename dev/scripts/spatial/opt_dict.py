@@ -2,7 +2,8 @@
 
 
 def options_dict(options):
-    opt_dict = {"n": range(2, 11), "isovalue": 0.3, "size": 1.0, "method": "dbscan", "onlypos": True, "doint": False, "seed": 0, "verbose": True}
+    opt_dict = {"n": range(2, 11), "isovalue": 0.3, "size": 1.0, "method": "dbscan", "onlypos": True, "doint": False, \
+                "seed": 0, "outer": 0.07, "inner": 0.01, "c3": False, "verbose": True}
 
     for i, op in enumerate(options[0::2]):
         if op == "--help":
@@ -12,10 +13,13 @@ def options_dict(options):
                 "  -n N               set the number of clusters to the int value N",
                 "  --isovalue i       set the isovalue to i",
                 "  --size s           set the size of the sample to s",
-		"  --method m	      choose the clustering method m=\"kmeans\" or m=\"dbscan\"",
+	         	"  --method m	      choose the clustering method m=\"kmeans\" or m=\"dbscan\"",
                 "  --onlypos b        choose if only position is considered (b=True) or not (b=False)",
                 "  --doint b          choose if integrals over clustering regions should be computed (b=True) or not (b=False)",
                 "  --seed sd          choose seed for clustering, default is 0",
+                "  --outer out        set the outer limit of integration range, default 0.07",
+                "  --inner in         set the inner limit of integration range, default 0.01",
+                "  --c3 c             set colour-coded clustering of output plots and VMD visualisation, default is False",
                 "  -v V               choose verbose mode, default is True",
                 "  --help             display this help and exit",
                 sep="\n",
@@ -32,6 +36,12 @@ def options_dict(options):
                 opt_dict["method"] = options[2 * i + 1]
             elif op == "--seed":
                 opt_dict["seed"] = options[2 * i + 1]
+            elif op == "--outer":
+                opt_dict["outer"] = float(options[2 * i + 1])
+            elif op == "--inner":
+                opt_dict["inner"] = float(options[2 * i + 1])
+            elif op == "--c3":
+                opt_dict["c3"] = True
             elif op == "-v":
                 if options[2 * i + 1] == "True":
                     opt_dict["verbose"] = True

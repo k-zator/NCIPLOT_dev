@@ -70,7 +70,7 @@ def plot_2d(X_iso, labels, filename, X=None, verbose=True):
         cb.set_label('Cluster')
         plt.clim(-0.5, N - 0.5)
         cb.ax.set_yticklabels(np.arange(0,N,1))
-        plt.xlim(-0.07, 0.07)
+        # plt.xlim(-0.07, 0.07)
         plt.ylim(0.0, 1.0)
         plt.xlabel(r"${\rm sign}(\lambda_2) \rho$")
         plt.ylabel("s")
