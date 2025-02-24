@@ -57,7 +57,7 @@ program nciplot
    ! logical units
    integer :: lugc, ludc, luvmd, ludat
    ! cubes
-   real*8, allocatable, dimension(:, :, :) :: crho, cgrad
+   real*8, allocatable, dimension(:, :, :) :: crho, cgrad, se
    ! ligand, intermolecular keyword
    logical :: ligand, inter, intra
    real*8 :: rthres
@@ -75,7 +75,7 @@ program nciplot
    ! discarding rho parameter
    real*8 :: rhoparam, rhoparam2
    ! properties of rho
-   real*8 :: rho, grad(3), dimgrad, grad2, hess(3, 3)
+   real*8 :: rho, grad(3), dimgrad, grad2, hess(3, 3), esteric
    integer, parameter :: mfrag = 100 ! max number of fragments
    real*8 :: rhom(mfrag)
    ! eispack
@@ -106,6 +106,7 @@ program nciplot
    logical, allocatable :: vert_use(:, :, :)
    real*8 :: sum_rhon_vol(9), sum_signrhon_vol(7)
    real*8 :: sum_rhon_area(9)
+   real*8 :: steric_energy(1)
    real*8, allocatable ::  rho_n(:)
    real*8, allocatable :: crho_n(:, :, :, :), cheig(:, :, :)
    ! crho_n is a variable created for multilevel grids. It is equivalen to rhom (density per fragment)
@@ -650,6 +651,8 @@ end do
       if (istat /= 0) call error('nciplot', 'could not allocate memory for density cube', faterr)
       allocate (cgrad(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1), stat=istat)
       if (istat /= 0) call error('nciplot', 'could not allocate memory for grad', faterr)
+      allocate (se(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1), stat=istat)
+      if (istat /= 0) call error('nciplot', 'could not allocate memory for se', faterr)
       xinc_coarse = xinc ! initialize just in case
       nstep_coarse = nstep ! initialize just in case
    end if
@@ -715,6 +718,7 @@ end do
                   if (.not. flag) then
                      crho(i, j, k) = 100d0
                      cgrad(i, j, k) = 100d0
+                     se(i, j, k) = 100d0
                      cheig(i, j, k) = 0d0
                      cycle
                   end if
@@ -730,6 +734,8 @@ end do
                rho = max(rho, 1d-30)
                grad2 = dot_product(grad, grad)
                dimgrad = sqrt(grad2)/(const*rho**(4.D0/3.D0))
+               ! k-zator addition: Weizsacker kinetic energy / steric energy
+               esteric = (grad2)/(rho*8.D0)
                intra = inter .and. ((any(rhom(1:nfrag) >= sum(rhom(1:nfrag))*rhoparam)) .or. &
                                     (sum(rhom(1:nfrag)) < rhoparam2*rho))
                if (intra) dimgrad = -dimgrad !checks for interatomic, intra is true iff inter and condition hold
@@ -738,9 +744,11 @@ end do
                if (rho /= 1d-30) then
                   crho(i, j, k) = sign(rho, heigs(2))*100.D0
                   cgrad(i, j, k) = dimgrad
+                  se(i, j, k) = esteric
                else
                   crho(i, j, k) = 100d0
                   cgrad(i, j, k) = 100d0
+                  se(i, j, k) = 100d0
                end if
 
                do molid = 1, nfiles
@@ -758,7 +766,7 @@ end do
    else  ! wavefunction densities
       if (.not. inter) then
          call system_clock(count=c1)
-         call calcprops_wfn(xinit, xinc, nstep, m, nfiles, crho, cgrad, cheig)
+         call calcprops_wfn(xinit, xinc, nstep, m, nfiles, crho, cgrad, cheig, se)
          !$omp parallel do private (x,rho,grad,hess,heigs,hvecs,wk1,wk2,istat,grad2,&
          !$omp dimgrad,intra,rhom,flag,indx,i0,j0,k0) schedule(dynamic)
          do k = 0, nstep(3) - 1
@@ -786,6 +794,7 @@ end do
                      if (.not. flag) then
                         crho(i, j, k) = 100d0
                         cgrad(i, j, k) = 100d0
+                        se(i, j, k) = 100d0
                         cheig(i, j, k) = 0d0
                         cycle
                      end if
@@ -800,10 +809,10 @@ end do
       else !very experimental wfn intermolecular
          call system_clock(count=c1)
          do molid = 1, nfiles
-            call calcprops_id_wfn(xinit, xinc, nstep, m, nfiles, molid, crho, cgrad, cheig)
+            call calcprops_id_wfn(xinit, xinc, nstep, m, nfiles, molid, crho, cgrad, cheig, se)
             crho_n(:, :, :, molid) = crho(:, :, :)
          end do
-         call calcprops_wfn(xinit, xinc, nstep, m, nfiles, crho, cgrad, cheig)
+         call calcprops_wfn(xinit, xinc, nstep, m, nfiles, crho, cgrad, cheig, se)
          do k = 0, nstep(3) - 1
             do j = 0, nstep(2) - 1
                do i = 0, nstep(1) - 1
@@ -834,6 +843,7 @@ end do
                      if (.not. flag) then
                         crho(i, j, k) = 100d0
                         cgrad(i, j, k) = 100d0
+                        se(i, j, k) = 100d0
                         cheig(i, j, k) = 0d0
                         cycle
                      end if
@@ -1005,8 +1015,8 @@ end if ! isnotcube
    call system_clock(count=c4)
    write (*, "(A, F6.2, A)") ' Time for writing outputs = ', real(dble(c4 - c3)/dble(cr), kind=8), ' secs'
   
-   !===============================================================================!
-   ! Integration for promolecular systems. Box removal.
+  !===============================================================================!
+  ! Integration for promolecular systems. Box removal.
   !===============================================================================!
    if (dointeg) then    ! dointeg
       if (ispromol) then
@@ -1038,8 +1048,8 @@ end if ! isnotcube
       endif  ! ispromol
    endif !dointeg
   
-   !===============================================================================!
-   ! Integration for non-promolecular systems. Box removal.
+  !===============================================================================!
+  ! Integration for non-promolecular systems. Box removal.
   !===============================================================================!
    if (dointeg) then
       if (.not. ispromol) then
@@ -1170,9 +1180,9 @@ end if ! isnotcube
       ! Integration 
       do i= 1, nranges
          tmp_rmbox_range_tmp(:,:,:)= box_in_range(:,:,:,i)
-         call dataGeom_points(sum_rhon_vol, sum_signrhon_vol, xinc, nstep, crho, crho_n, &
-                  rmbox_coarse,tmp_rmbox_range_tmp, nfiles)
-         write (uout, 135) srhorange(i,1), srhorange(i,2), sum_rhon_vol, sum_signrhon_vol 
+         call dataGeom_points(sum_rhon_vol, sum_signrhon_vol, xinc, nstep, crho, se, crho_n, &
+                  rmbox_coarse,tmp_rmbox_range_tmp, nfiles, steric_energy)
+         write (uout, 135) srhorange(i,1), srhorange(i,2), sum_rhon_vol, sum_signrhon_vol, steric_energy
          rho_range(i) = sum_rhon_vol(1)
       enddo
       ! Additivy check
@@ -1499,6 +1509,7 @@ end if ! isnotcube
           ' n=4/3           :', 3X, F15.8, /, &
           ' n=5/3           :', 3X, F15.8, /, &
           '---------------------------------------------------------------------', /, &
+          ' Steric_energy   :', 3X, F15.8, /, &
           '                         ',/) 
 
 
@@ -1950,12 +1961,15 @@ contains
 
    end subroutine dataGeom 
 
-   subroutine dataGeom_points(sum_rhon_vol, sum_signrhon_vol, xinc, nstep, crho, crho_n, rmbox_coarse,rmpoint_coarse, nfiles)
+   subroutine dataGeom_points(sum_rhon_vol, sum_signrhon_vol, xinc, nstep, crho, se, crho_n, rmbox_coarse, &
+      rmpoint_coarse, nfiles, steric_energy)
       real*8, intent(out) :: sum_rhon_vol(9)
       real*8, intent(out) :: sum_signrhon_vol(7)
+      real*8, intent(out) :: steric_energy(1)
       real*8, intent(in) :: xinc(3)
       integer, intent(in) :: nstep(3)
       real*8, intent(in) :: crho(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1), &
+                            se(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1), &
                             crho_n(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1, 1:nfiles)
       logical, intent(in) :: rmbox_coarse(0:nstep(1) - 2, 0:nstep(2) - 2, 0:nstep(3) - 2)
       logical, intent(in) :: rmpoint_coarse(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1)
@@ -1966,6 +1980,7 @@ contains
       
       sum_rhon_vol = 0
       sum_signrhon_vol = 0
+      steric_energy = 0
       negative = 0
       positive = 0
       ! integral of rho^n over the points
@@ -2011,6 +2026,8 @@ contains
                                         *xinc(1)*xinc(2)*xinc(3)/8
                             sum_signrhon_vol(7) = sum_signrhon_vol(7) + signlambda_2*(abs(crho(i1, j1, k1)/100)**(1.666)) &
                                         *xinc(1)*xinc(2)*xinc(3)/8
+
+                            steric_energy(1) = steric_energy(1) + abs(se(i1, j1, k1)/100)*xinc(1)*xinc(2)*xinc(3)
                          end if    
                          end do 
                      end do 
