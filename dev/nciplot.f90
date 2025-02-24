@@ -738,7 +738,7 @@ end do
                grad2 = dot_product(grad, grad)
                dimgrad = sqrt(grad2)/(const*rho**(4.D0/3.D0))
                ! k-zator addition: Weizsacker kinetic energy / steric energy
-               esteric = (grad2)/(rho*8.D0)
+               esteric = dot_product(abs(grad), abs(grad))/(rho*8.D0)
                intra = inter .and. ((any(rhom(1:nfrag) >= sum(rhom(1:nfrag))*rhoparam)) .or. &
                                     (sum(rhom(1:nfrag)) < rhoparam2*rho))
                if (intra) dimgrad = -dimgrad !checks for interatomic, intra is true iff inter and condition hold
@@ -747,7 +747,7 @@ end do
                if (rho /= 1d-30) then
                   crho(i, j, k) = sign(rho, heigs(2))*100.D0
                   cgrad(i, j, k) = dimgrad
-                  se(i, j, k) = esteric
+                  se(i, j, k) = (abs(grad(1))**2 + abs(grad(2))**2 + abs(grad(3))**2)/(rho*8.D0)
                else
                   crho(i, j, k) = 100d0
                   cgrad(i, j, k) = 100d0
