@@ -2,7 +2,7 @@
 
 
 def options_dict(options):
-    opt_dict = {"n": range(2, 11), "isovalue": 0.3, "size": 1.0, "method": "dbscan", "onlypos": True, "doint": False, \
+    opt_dict = {"n": range(2, 11), "isovalue": 0.3, "size": 1.0, "method": "dbscan", "onlypos": True, "doint": True, \
                 "seed": 0, "outer": 0.07, "inner": 0.01, "c3": False, "verbose": True}
 
     for i, op in enumerate(options[0::2]):

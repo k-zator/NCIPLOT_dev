@@ -22,6 +22,7 @@ if len(sys.argv)>2:
     options += sys.argv[2:]
 
 opt_dict = options_dict(options)
+print(opt_dict)
 
 np.random.seed(opt_dict["seed"])
 

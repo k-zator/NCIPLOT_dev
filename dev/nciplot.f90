@@ -1184,6 +1184,40 @@ end if ! isnotcube
    call system_clock(count=c6)
 
    !===============================================================================!
+   ! Write .dat and cube files if pprint is set.
+   !===============================================================================!
+   if (.true.) then
+      do k = 0, nstep(3) - 1
+         do j = 0, nstep(2) - 1
+            do i = 0, nstep(1) - 1
+               ! fragments for the wfn case
+               intra = (cgrad(i, j, k) < 0d0)
+               cgrad(i, j, k) = abs(cgrad(i, j, k))
+               dimgrad = cgrad(i, j, k)
+               rho = crho(i, j, k)/100d0
+               ! write the dat file
+               if (ludat > 0 .and. .not. intra .and. (abs(rho) < rhocut) .and. (dimgrad < dimcut) .and. &
+                   (abs(rho) > 1d-30) .and. .not. (rmbox_coarse(i, j, k) )) then
+                  write (ludat, '(1p,E18.10,E18.10)') rho, dimgrad
+               endif ! rhocut/dimcut
+ 
+               ! prepare the cube files
+               if ((abs(rho) > rhoplot) .or. (dimgrad > dimcut) .or. (rmbox_coarse(i, j, k) )) then
+                  cgrad(i, j, k) = 100d0
+               endif !rho cutoff
+               if  (intra) then ! intermolecular points also to 100
+                  cgrad(i, j, k) = 100d0
+               endif
+            end do
+         end do
+      end do
+      if (ludc > 0) call write_cube_body(ludc, nstep, crho)          ! density
+      if (lugc > 0) call write_cube_body(lugc, nstep, cgrad)         ! RDG
+      call system_clock(count=c4)
+      write (*, "(A, F6.2, A)") ' Time for writing outputs = ', real(dble(c4 - c3)/dble(cr), kind=8), ' secs'
+   end if
+
+   !===============================================================================!
    ! Deallocate grids.
    !===============================================================================!
    if (allocated(tmp_rmbox)) deallocate (tmp_rmbox)

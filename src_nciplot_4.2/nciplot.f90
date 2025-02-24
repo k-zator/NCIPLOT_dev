@@ -1107,8 +1107,8 @@ program nciplot
 114 format('#!/usr/local/bin/vmd', /, &
           '# VMD script written by save_state $Revision: 1.10 $', /, &
           '# VMD version: 1.8.6            ', /, &
-          'set viewplist            ', /, &
-          'set fixedlist            ', /, &
+          'set viewplist {}         ', /, &
+          'set fixedlist {}         ', /, &
           '# Display settings            ', /, &
           'display projection   Orthographic            ', /, &
           'display nearclip set 0.000000            ', /, &
