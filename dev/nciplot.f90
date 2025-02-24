@@ -97,7 +97,7 @@ program nciplot
    integer :: indx(3), nstep_coarse(3)
    real*8, allocatable :: fginc(:)
    real*8 :: xinc_coarse(3)
-   real*8, allocatable, dimension(:, :, :) :: tmp_crho, tmp_cgrad
+   real*8, allocatable, dimension(:, :, :) :: tmp_crho, tmp_cgrad, tmp_se
    logical :: flag, firstgrid
    logical, allocatable :: rmbox_coarse(:, :, :), tmp_rmbox(:, :, :), rmpoint_coarse(:,:,:)
    integer :: cr, c0, c1, c2, c3, c4, c5, c6
@@ -672,6 +672,9 @@ end do
       if (allocated(tmp_cgrad)) deallocate (tmp_cgrad)
       allocate (tmp_cgrad(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1), stat=istat)
       call move_alloc(tmp_cgrad, cgrad)
+      if (allocated(tmp_se)) deallocate (tmp_se)
+      allocate (tmp_se(0:nstep(1) - 1, 0:nstep(2) - 1, 0:nstep(3) - 1), stat=istat)
+      call move_alloc(tmp_se, se)
    end if
 
    !===============================================================================!
