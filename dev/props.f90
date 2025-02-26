@@ -244,7 +244,7 @@ contains
        !        !$omp critical (writeshared)
                rho(ip, jp, kp) = sign(rhoaux(ip), heigs(2))*100d0
                grad(ip, jp, kp) = sqrt(grad2)/(const*rhoaux(ip)**fothirds)
-               se(ip, jp, kp) = (abs(grad2))/(rhoaux(ip)*8.D0)
+               se(ip, jp, kp) = (grad2)/(rhoaux(ip)*8.D0)
                cheig(ip, jp, kp) = heigs(2)
                !write(*,*)  rhoaux(ip)
       !         !$omp end critical (writeshared)
@@ -457,7 +457,7 @@ contains
       !         !$omp critical (writeshared)
                rho(ip, jp, kp) = rhoaux(ip)
                grad(ip, jp, kp) = sqrt(grad2)/(const*rhoaux(ip)**fothirds)
-               se(ip, jp, kp) = (abs(gg(ip, 1))**2 + abs(gg(ip, 2))**2 + abs(gg(ip, 3))**2)/(rhoaux(ip)*8.D0)
+               se(ip, jp, kp) = grad2/(rhoaux(ip)*8.D0)
                cheig(ip, jp, kp) = heigs(2)
       !         !$omp end critical (writeshared)
             enddo
