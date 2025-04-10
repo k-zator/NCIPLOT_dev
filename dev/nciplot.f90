@@ -198,7 +198,7 @@ program nciplot
    ! by default, use density grids for heavier or charged atoms if promolecularity is on
    if (ispromol) then
    call init_rhogrid(m, nfiles)
-! this call was initially out of the if loop, but seems best inside
+   ! this call was initially out of the if loop, but seems best inside
       do i = 1, nfiles
          if (m(i)%ifile == ifile_xyz .and. (any(m(i)%z > atomic_zmax) .or. any(m(i)%q > 0))) then
             m(i)%ifile = ifile_grd
@@ -210,7 +210,7 @@ program nciplot
          end if
       end do
    end if
-    isnotcube = .not. (all(m(:)%ifile == ifile_cube))
+   isnotcube = .not. (all(m(:)%ifile == ifile_cube))
    ! This checks whether the calculation uses cube files
    !===============================================================================!
    ! Input files read and processed. Set defaults for running NCIPLOT now.
@@ -247,7 +247,7 @@ program nciplot
       allocate (fginc(ng))
       fginc = (/8, 4, 2, 1/)
    end if
-     !===============================================================================!
+   !===============================================================================!
    ! Estimating box around the molecule using xinit and xmax for the main system.
    !===============================================================================!
    xinit = m(1)%x(:, 1)
@@ -547,9 +547,9 @@ end do
    !===============================================================================!
    ! Defining box in detail now.
    !===============================================================================!
-    if (.not. isnotcube) then
-         autor=.false.
-         nstep= abs(xcom) !dimensions given on principal cube
+   if (.not. isnotcube) then
+      autor =.false.
+      nstep = abs(xcom) ! dimensions given on principal cube
     end if
     ! if we have a cube file, parameters are already known
 
@@ -628,7 +628,7 @@ end do
    !===============================================================================!
    ! Start run, using multi-level grids.
    !===============================================================================!
-    if (isnotcube) then
+   if (isnotcube) then
    ind_g = 1  ! index of the multi-level grids, starts at 1 always
    xinc_init = xinc ! initial coarse grid
    allocate (rho_n(1:nfiles))
@@ -988,10 +988,10 @@ end if ! isnotcube
             dimgrad = cgrad(i, j, k)
             rho = crho(i, j, k)/100d0 ! why dividing by 100 ? , true no idea
             ! write the dat file
-            if (ludat > 0 .and. .not. intra .and. (abs(rho) < rhocut) .and. (dimgrad < dimcut) .and. &
-                abs(rho) > 1d-30) then
-               write (ludat, '(1p,E18.10,E18.10)') rho, dimgrad
-            endif ! rhocut/dimcut
+            ! if (ludat > 0 .and. .not. intra .and. (abs(rho) < rhocut) .and. (dimgrad < dimcut) .and. &
+            !     abs(rho) > 1d-30) then
+            !    write (ludat, '(1p,E18.10,E18.10)') rho, dimgrad
+            ! endif ! rhocut/dimcut
    
             ! prepare the cube files !!modifJ
 !            if (isnotcube) then ! not same cut-off for cube and non-cube inputfiles
@@ -1012,8 +1012,8 @@ end if ! isnotcube
    !===============================================================================!
    ! Write cube files.
    !===============================================================================!
-   if (ludc > 0) call write_cube_body(ludc, nstep, crho)          ! density
-   if (lugc > 0) call write_cube_body(lugc, nstep, cgrad)         ! RDG
+   ! if (ludc > 0) call write_cube_body(ludc, nstep, crho)          ! density
+   ! if (lugc > 0) call write_cube_body(lugc, nstep, cgrad)         ! RDG
   
    call system_clock(count=c4)
    write (*, "(A, F6.2, A)") ' Time for writing outputs = ', real(dble(c4 - c3)/dble(cr), kind=8), ' secs'
@@ -1032,12 +1032,12 @@ end if ! isnotcube
                   j1 = (/j, j + 1/)
                   k1 = (/k, k + 1/)
                   if (inter) then 
-                       do l =1, nfrag     
-                          IsInter =((abs(crho_n(i1, j1, k1, l)) .ge. abs(crho(i1, j1, k1))*rhoparam))
-                           if (count(IsInter).gt.0) then
-                               rmbox_coarse(i, j, k) = .true. !inactive
-                           end if
-                       enddo    
+                     do l =1, nfrag     
+                        IsInter =((abs(crho_n(i1, j1, k1, l)) .ge. abs(crho(i1, j1, k1))*rhoparam))
+                        if (count(IsInter).gt.0) then
+                            rmbox_coarse(i, j, k) = .true. !inactive
+                        end if
+                     enddo    
                   end if
                 !  if (((dimgrad > dimcut) .and. .not. rmbox_coarse(i, j, k))) then
                 !     rmbox_coarse(i, j, k) = .true. !inactive if dimgrad > dimcut
@@ -1167,8 +1167,6 @@ end if ! isnotcube
                                          ((crho(ll, jj, kk)/100d0) .lt. upperbound) .and. (cgrad(ll,jj,kk).gt.0)) then 
                                      
                                     box_in_range(ll,jj,kk,i)=.false.    
-                                
-                              
                                endif            
                              enddo
                           enddo
@@ -1213,14 +1211,6 @@ end if ! isnotcube
                    (abs(rho) > 1d-30) .and. .not. (rmbox_coarse(i, j, k) )) then
                   write (ludat, '(1p,E18.10,E18.10)') rho, dimgrad
                endif ! rhocut/dimcut
- 
-               ! prepare the cube files
-               if ((abs(rho) > rhoplot) .or. (dimgrad > dimcut) .or. (rmbox_coarse(i, j, k) )) then
-                  cgrad(i, j, k) = 100d0
-               endif !rho cutoff
-               if  (intra) then ! intermolecular points also to 100
-                  cgrad(i, j, k) = 100d0
-               endif
             end do
          end do
       end do
@@ -1270,7 +1260,6 @@ end if ! isnotcube
    end if
 
    !===============================================================================!
-   ! captar error de no librerias para mencionar por terminal, no matar en caso
    ! NCICLUSTER python script integration
    !===============================================================================!
    if(doclustering) then 
@@ -1283,7 +1272,7 @@ end if ! isnotcube
 
       write(command_ncicluster, '(A,A,A,A,F5.2,A,F5.3,A,F5.3)') trim(adjustl(nciplot_home)), "/dev/scripts/ncicluster.py", & 
          " tmp_ncicluster_file", & 
-         " --doint True --method kmeans -n 2 --isovalue ", & 
+         " --doint True --method kmeans -n 13 --isovalue ", & 
          dimcut, &
          " --outer ", & 
          srhorange(3, 2), &          
