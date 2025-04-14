@@ -55,7 +55,7 @@ program nciplot
    ! the molecular info
    type(molecule), allocatable :: m(:)
    ! logical units
-   integer :: lugc, ludc, luvmd, ludat
+   integer :: lugc, ludc, luvmd, ludat, lubo
    ! cubes
    real*8, allocatable, dimension(:, :, :) :: crho, cgrad, se
    ! ligand, intermolecular keyword
@@ -576,6 +576,7 @@ end do
    !===============================================================================!
    lugc = -1 ! RDG logical unit
    ludc = -1 ! Density logical unit
+   lubo = -1 ! Density logical unit
    luvmd = -1 ! VMD logical unit
    write (uout, 131)
    if (inter) then
@@ -594,9 +595,11 @@ end do
    write (uout, *)
 !  write(uout,121) xinit, xmax, xinc, nstep ! this is currently not used because it will be adapted
    if (noutput >= 2) then    ! number of outputs --> 2: Only .CUBE files
+      lubo = 8
       lugc = 9
       ludc = 10
       luvmd = 11
+      open (lubo, file=trim(oname)//"-bool.cube")    ! RDG cube file
       open (lugc, file=trim(oname)//"-grad.cube")    ! RDG cube file
       open (ludc, file=trim(oname)//"-dens.cube")    ! Density cube file
       open (luvmd, file=trim(oname)//".vmd")         ! VMD script
@@ -620,10 +623,12 @@ end do
    if (noutput >= 2) then
       write (uout, 124) trim(oname)//"-grad.cube", &
          trim(oname)//"-dens.cube", &
+         trim(oname)//"-bool.cube", &
          trim(oname)//".vmd"
    end if
    if (lugc > 0) call write_cube_header(lugc, 'grad_cube', '3d plot, reduced density gradient')
    if (ludc > 0) call write_cube_header(ludc, 'dens_cube', '3d plot, density')
+   if (lubo > 0) call write_cube_header(lubo, 'bool_cube', '3d plot, density')
 
    !===============================================================================!
    ! Start run, using multi-level grids.
@@ -1216,6 +1221,7 @@ end if ! isnotcube
       end do
       if (ludc > 0) call write_cube_body(ludc, nstep, crho)          ! density
       if (lugc > 0) call write_cube_body(lugc, nstep, cgrad)         ! RDG
+      if (lubo > 0) call write_rmbox(lubo, nstep, rmbox_coarse)
       call system_clock(count=c4)
       write (*, "(A, F6.2, A)") ' Time for writing outputs = ', real(dble(c4 - c3)/dble(cr), kind=8), ' secs'
    end if
@@ -1568,6 +1574,23 @@ contains
       close (lu)
 
    end subroutine write_cube_body
+
+   subroutine write_rmbox(lu, n, c)
+
+      integer, intent(in) :: lu
+      integer, intent(in) :: n(3)
+      logical*4, intent(in) :: c(0:n(1) - 1, 0:n(2) - 1, 0:n(3) - 1)
+
+      integer :: i, j
+
+      do i = 0, n(1) - 1
+         do j = 0, n(2) - 1
+            write (lu, '(6(1x,l1))') (c(i, j, k), k=0, n(3) - 1)
+         enddo
+      enddo
+      close (lu)
+
+   end subroutine write_rmbox
 
    ! write the .mesh file
    subroutine write_mesh_file(lumesh, lusol, xinit, xinc, nstep, cgrad, xinc_coarse, rmbox_coarse, nstep_coarse, vert_use)
